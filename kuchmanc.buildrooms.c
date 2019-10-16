@@ -45,13 +45,10 @@ int main(void)
 
     //Increment through shrinking list of options picking names
     int randPos;
-    printf("test1");
     for (i = 0; i < 7; i++)
     {
         //Generate random number between the current i and end of list
         randPos = (rand() % (10 - i)) + i;
-
-        printf("%d", randPos);
 
         pickedNames[i] = nameOpts[randPos];
         
@@ -72,7 +69,24 @@ int main(void)
         fprintf(roomFiles[i], "ROOM NAME: %s\n", roomNames[pickedNames[i]]);
     }
 
+    //Generate all the connections until the requirements are achieved
+    int roomConnections[7][7] = { 0 };
 
+    for (i = 0; i < 7; i++){
+        roomConnections[i][i] = -1;
+    }
+
+    //TODO Revome as jut for testing
+    int j;
+    for (i = 0; i < 7; i++) {
+        for (j = 0; j < 7; j++) {
+            printf("%d ", roomConnections[i][j]);
+        }
+        printf("\n");
+    }
+
+
+    //TODO Add room type
 
     //Close the rooms
     for (i = 0; i < 7; i++) {
