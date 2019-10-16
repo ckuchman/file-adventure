@@ -65,9 +65,11 @@ int main(void)
     memset(filePath, '\0', 60);
 
     for (i = 0; i < 7; i++) {
-
-        sprintf(filePath, "./%s/%s", dirName, roomNames[pickedNames[i]]);
+        //Creates and open files
+        sprintf(filePath, "./%s/%s_room", dirName, roomNames[pickedNames[i]]);
         roomFiles[i] = fopen(filePath, "w+");
+
+        fprintf(roomFiles[i], "ROOM NAME: %s\n", roomNames[pickedNames[i]]);
     }
 
 
