@@ -5,15 +5,15 @@
 
 int main(void)
 {
-    //TODO Create a directory called kuchmanc.rooms.<PROCESS ID>
+    //Create a directory called kuchmanc.rooms.<PROCESS ID>
     int pid = getpid();
-    char dirName[100];
-    memset(dirName, '\0', 100);
+    char dirName[50];
+    memset(dirName, '\0', 50);
     sprintf(dirName, "./kuchmanc.rooms.%d", pid);
 
     mkdir(dirName, 0700);
 
-    //TODO Generate 7 different room files
+    //Generate 7 different room files
 
     //Create list of 10 file names possible
     char roomNames[10][10];
@@ -37,12 +37,6 @@ int main(void)
     sprintf(roomNames[8], "TODO9");
     sprintf(roomNames[9], "TODO10");
     
-    //TODO Can remove, just for testing
-    //for (i = 0; i < 10; i++)
-    //{
-    //    printf("Room %d: %s\n", i, roomNames[i]);
-    //}
-
     //Randomly create 7 rooms (no duplicates)
     srand(time(0));
 
@@ -61,15 +55,27 @@ int main(void)
 
         pickedNames[i] = nameOpts[randPos];
         
-        //Swap picked name with pos in list to avoid duplicates
-        nameOpts[i] = nameOpts[randPos];
+        //make the picked name "removed"
+        nameOpts[randPos] = nameOpts[i];
     }
 
-    //TODO Can remove, just for testing
-    for (i = 0; i < 7; i++)
-    {
-        printf("Room %d: %d\n", i, pickedNames[i]);
-    } 
+    //Creates the seven rooms
+    FILE *roomFiles[7];
+    char filePath[60];
+    memset(filePath, '\0', 60);
+
+    for (i = 0; i < 7; i++) {
+
+        sprintf(filePath, "./%s/%s", dirName, roomNames[pickedNames[i]]);
+        roomFiles[i] = fopen(filePath, "w+");
+    }
+
+
+
+    //Close the rooms
+    for (i = 0; i < 7; i++) {
+        fclose(roomFiles[i]);
+    }
 
     return 0; 
 }
