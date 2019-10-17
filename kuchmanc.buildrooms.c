@@ -23,6 +23,7 @@ int main(void)
 
     for (i = 0; i < 10; i++)
     {
+        //TODO This I think needs to include sizeof
         memset(roomNames[i], '\0', 10);
     }
 
