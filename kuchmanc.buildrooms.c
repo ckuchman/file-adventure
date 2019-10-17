@@ -5,6 +5,8 @@
 
 int main(void)
 {
+    int i, j;
+
     //Create a directory called kuchmanc.rooms.<PROCESS ID>
     int pid = getpid();
     char dirName[50];
@@ -19,7 +21,6 @@ int main(void)
     char roomNames[10][10];
 
     //TODO put i somewhere better?
-    int i;
     for (i = 0; i < 10; i++)
     {
         memset(roomNames[i], '\0', 10);
@@ -71,20 +72,51 @@ int main(void)
 
     //Generate all the connections until the requirements are achieved
     int roomConnections[7][7] = { 0 };
+    int roomConCount[7] = { 0 };
 
     for (i = 0; i < 7; i++){
         roomConnections[i][i] = -1;
     }
 
-    //TODO Revome as jut for testing
-    int j;
-    for (i = 0; i < 7; i++) {
-        for (j = 0; j < 7; j++) {
-            printf("%d ", roomConnections[i][j]);
+    //Randomly assigns connections
+    int row, col;
+    while (!ValidNumConnections(&roomConCount[0], 7)) {
+        row = 0;
+        col = 0;
+
+        //Generate random connections until one is valid
+        while (roomConnections[row][col] != 0 || roomConCount[row] == 6 || roomConCount[col] == 6) {
+            row = rand() % 7;
+            col = rand() % 7; 
         }
-        printf("\n");
+
+        //Make connection and store number of connections per room
+        roomConnections[row][col] = 1;
+        roomConnections[col][row] = 1;
+        roomConCount[row]++;
+        roomConCount[col]++;
+
+        //TODO Remove as just for testing
+        for (i = 0; i < 7; i++) {
+            for (j = 0; j < 7; j++) {
+                printf("%d ", roomConnections[i][j]);
+            }
+            printf("\n");
+        }
     }
 
+    //Add connection text to files
+    int roomNum;
+    for (i = 0; i < 7; i++) {
+        roomNum = 1;
+        
+        for (j = 0; j < 7; j++) {
+            if (roomConnections[i][j] == 1) {
+                fprintf(roomFiles[i], "CONNECTION %d: %s\n", roomNum, roomNames[pickedNames[j]]);
+                roomNum++;
+            }
+        }
+    }
 
     //TODO Add room type
 
@@ -94,4 +126,19 @@ int main(void)
     }
 
     return 0; 
+}
+
+int ValidNumConnections(int *conCount, int numRooms) {
+
+    int validNum = 1;
+
+    int i;
+    for (i = 0; i < numRooms; i++) {
+        printf("Number of room connections for room %d: %d\n", i, conCount[i]);
+        if (conCount[i] < 3) {
+            validNum = 0;
+        }
+    }   
+
+    return validNum;
 }
