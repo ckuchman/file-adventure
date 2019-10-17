@@ -6,6 +6,7 @@
 int main(void)
 {
     int i, j;
+    srand(time(0));
 
     //Create a directory called kuchmanc.rooms.<PROCESS ID>
     int pid = getpid();
@@ -20,27 +21,24 @@ int main(void)
     //Create list of 10 file names possible
     char roomNames[10][10];
 
-    //TODO put i somewhere better?
     for (i = 0; i < 10; i++)
     {
         memset(roomNames[i], '\0', 10);
     }
 
     //Hardcode diffetent room names
-    sprintf(roomNames[0], "TODO1");
-    sprintf(roomNames[1], "TODO2");
-    sprintf(roomNames[2], "TODO3");
-    sprintf(roomNames[3], "TODO4");
-    sprintf(roomNames[4], "TODO5");
-    sprintf(roomNames[5], "TODO6");
-    sprintf(roomNames[6], "TODO7");
-    sprintf(roomNames[7], "TODO8");
-    sprintf(roomNames[8], "TODO9");
-    sprintf(roomNames[9], "TODO10");
+    sprintf(roomNames[0], "BugCity");
+    sprintf(roomNames[1], "PeekPeak");
+    sprintf(roomNames[2], "TheNode");
+    sprintf(roomNames[3], "SpookDen");
+    sprintf(roomNames[4], "RatFjord");
+    sprintf(roomNames[5], "LostBay");
+    sprintf(roomNames[6], "Castle");
+    sprintf(roomNames[7], "LightDam");
+    sprintf(roomNames[8], "Glendale");
+    sprintf(roomNames[9], "TownTown");
     
     //Randomly create 7 rooms (no duplicates)
-    srand(time(0));
-
     int nameOpts[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     int pickedNames[7];
 
@@ -97,12 +95,12 @@ int main(void)
         roomConCount[col]++;
 
         //TODO Remove as just for testing
-        for (i = 0; i < 7; i++) {
-            for (j = 0; j < 7; j++) {
-                printf("%d ", roomConnections[i][j]);
-            }
-            printf("\n");
-        }
+        //for (i = 0; i < 7; i++) {
+        //    for (j = 0; j < 7; j++) {
+        //        printf("%d ", roomConnections[i][j]);
+        //    }
+        //    printf("\n");
+        //}
     }
 
     //Add connection text to files
@@ -118,7 +116,23 @@ int main(void)
         }
     }
 
-    //TODO Add room type
+    //Determine the start and end room
+    int startRoom = rand() % 7;
+    int endRoom;
+
+    do {
+        endRoom = rand() % 7;
+    } while(endRoom == startRoom);
+    
+    for (i = 0; i < 7; i++) {
+       if (i == startRoom) {
+           fprintf(roomFiles[i], "ROOM TYPE: START_ROOM\n");
+       } else if (i == endRoom) {
+           fprintf(roomFiles[i], "ROOM TYPE: END_ROOM\n");
+       } else {
+           fprintf(roomFiles[i], "ROOM TYPE: MID_ROOM\n");
+       }
+    }
 
     //Close the rooms
     for (i = 0; i < 7; i++) {
@@ -134,7 +148,7 @@ int ValidNumConnections(int *conCount, int numRooms) {
 
     int i;
     for (i = 0; i < numRooms; i++) {
-        printf("Number of room connections for room %d: %d\n", i, conCount[i]);
+//        printf("Number of room connections for room %d: %d\n", i, conCount[i]);
         if (conCount[i] < 3) {
             validNum = 0;
         }
