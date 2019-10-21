@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <time.h>
 
+void AdventureLoop (FILE *startRoom, FILE *endRoom);
 void DisplayRoom (FILE *room);
 
 int main() {
@@ -37,28 +38,47 @@ int main() {
     //Close current directory
     closedir(directory);
 
-    //Open rooms directory to find Start
+    //Open rooms directory to find Start and End
     DIR *roomDirectory;
     FILE *room;
+
     char lineStr[50];
     memset(lineStr, '\0', 50*sizeof(char));
 
     char roomFile[50];
     memset(roomFile, '\0', 50*sizeof(char));
 
+    char startRoomPath[50];
+    memset(startRoomPath, '\0', 50*sizeof(char));
+
+    char endRoomPath[50];
+    memset(endRoomPath, '\0', 50*sizeof(char));
+
     roomDirectory = opendir(roomDir);
 
+    //Increment through files in room directory
     while (entry = readdir(roomDirectory)){
     
-        stat(entry->d_name, &statBuffer);
-
+        //Only look at files that end in _room
         if (strstr(entry->d_name, "_room") != NULL){
 
+            //Concat the proper file path and open it
             sprintf(roomFile, "%s/%s", roomDir, entry->d_name);
-
             room = fopen(roomFile, "r");
 
-            DisplayRoom(room);
+            //Check if the room is the start
+            fseek(room, -11, SEEK_END);
+
+	    if (strstr(fgets(lineStr, 50, room), "START") != NULL) {
+                sprintf(startRoomPath, "%s", roomFile); 
+	    }
+ 
+            //Check if the room is the end
+            fseek(room, -9, SEEK_END);
+
+	    if (strstr(fgets(lineStr, 50, room), "END") != NULL) {
+                sprintf(endRoomPath, "%s", roomFile);
+	    }           
 
             fclose(room);
         }
@@ -66,17 +86,40 @@ int main() {
     
     closedir(roomDirectory);
 
-    //Game loop while not at end room
-    FILE *currentRoom;
+    //Run game loop
+    FILE *startRoom, *endRoom;
 
+    startRoom = fopen(startRoomPath, "r");
+    endRoom = fopen(endRoomPath, "r");
 
+    AdventureLoop(startRoom, endRoom);
 
-
-    //Display end room results
-
+    fclose(startRoom); 
+    fclose(endRoom);
 
     return 0;
 }
+
+void AdventureLoop (FILE *startRoom, FILE *endRoom){
+
+    FILE *currentRoom;
+
+    currentRoom = startRoom;    
+
+    //game loop
+    
+    //Display contents of Room
+    DisplayRoom(currentRoom);
+
+    //Get valid input from user
+
+    //increment step count and add new room to list, set current room to new room
+
+    //Check if the end room has been reached, if not then start loop again
+
+    //Print end message
+}
+
 
 void DisplayRoom (FILE *room){
     char lineStr[50];
