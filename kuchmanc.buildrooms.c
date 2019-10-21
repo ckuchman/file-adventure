@@ -27,7 +27,7 @@ int main(void)
         memset(roomNames[i], '\0', 10);
     }
 
-    //Hardcode diffetent room names
+    //Hardcode different room names
     sprintf(roomNames[0], "BugCity");
     sprintf(roomNames[1], "PeekPeak");
     sprintf(roomNames[2], "TheNode");

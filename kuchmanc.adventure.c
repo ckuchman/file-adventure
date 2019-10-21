@@ -5,6 +5,8 @@
 #include <dirent.h>
 #include <time.h>
 
+void DisplayRoom (FILE *room);
+
 int main() {
 
     //Find the most recent rooms folder
@@ -32,20 +34,41 @@ int main() {
         }
     }
 
-    printf("Final Dir: %s", roomDir);
-
     //Close current directory
     closedir(directory);
 
-    //Open rooms directory
+    //Open rooms directory to find Start
     DIR *roomDirectory;
+    FILE *room;
+    char lineStr[50];
+    memset(lineStr, '\0', 50*sizeof(char));
+
+    char roomFile[50];
+    memset(roomFile, '\0', 50*sizeof(char));
 
     roomDirectory = opendir(roomDir);
 
+    while (entry = readdir(roomDirectory)){
+    
+        stat(entry->d_name, &statBuffer);
+
+        if (strstr(entry->d_name, "_room") != NULL){
+
+            sprintf(roomFile, "%s/%s", roomDir, entry->d_name);
+
+            room = fopen(roomFile, "r");
+
+            DisplayRoom(room);
+
+            fclose(room);
+        }
+    }
     
     closedir(roomDirectory);
 
     //Game loop while not at end room
+    FILE *currentRoom;
+
 
 
 
@@ -55,4 +78,33 @@ int main() {
     return 0;
 }
 
+void DisplayRoom (FILE *room){
+    char lineStr[50];
+    memset(lineStr, '\0', 50*sizeof(char));
 
+    //Print the current location
+    fgets(lineStr, 50, room);
+            
+    //Increment the string to reach room name
+    printf("CURRENT LOCATION: %s", lineStr + 11);
+            
+    //Add the connections
+    printf("POSSIBLE CONNECTIONS: ");            
+           
+    fgets(lineStr, 50, room);
+            
+    while (strstr(lineStr, "CONNECTION") != NULL){
+                
+        //Gets rid of new line
+        lineStr[strlen(lineStr) - 1] = '\0';
+
+        printf("%s" , lineStr + 14);
+
+        if (strstr(fgets(lineStr, 50, room), "CONNECTION") != NULL){
+            printf(", ");
+        }
+    }
+
+    printf(".\n");
+    printf("WHERE TO? >");
+}
