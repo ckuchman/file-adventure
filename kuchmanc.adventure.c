@@ -5,8 +5,17 @@
 #include <dirent.h>
 #include <time.h>
 
-void AdventureLoop (FILE *startRoom, FILE *endRoom);
-void DisplayRoom (FILE *room);
+struct room * getRoomByName (struct room *roomList, int roomNum, char name[]);
+void adventureLoop (struct room *startRoom);
+void displayRoom (struct room *curRoom);
+
+struct room
+{
+    char name[9];
+    struct room *conRooms[6];
+    int numConRooms;
+    char type[4];
+};
 
 int main() {
 
@@ -38,23 +47,51 @@ int main() {
     //Close current directory
     closedir(directory);
 
-    //Open rooms directory to find Start and End
+
+    //Store information of rooms
     DIR *roomDirectory;
-    FILE *room;
+    struct room roomList[7];
+
+    char fileStr[50];
+    memset(fileStr, '\0', 50*sizeof(char));
+
+    int roomCount = 0;
+    int len = 0;
+
+    roomDirectory = opendir(roomDir);
+
+    //Increment through files in room directory to store names
+    while (entry = readdir(roomDirectory)){
+
+        //Only look at files that end in _room
+        if (strstr(entry->d_name, "_room") != NULL){
+            
+            //Copy the file name into the struct
+            strcpy(fileStr, entry->d_name);
+
+            len = strlen(fileStr);
+            fileStr[len - 5] = '\0';
+
+            strcpy(roomList[roomCount].name, fileStr);
+            roomCount++;
+        }
+    }
+
+    //Open rooms directory to find Start and End
+    FILE *roomFile;
 
     char lineStr[50];
     memset(lineStr, '\0', 50*sizeof(char));
 
-    char roomFile[50];
-    memset(roomFile, '\0', 50*sizeof(char));
+    char roomFileStr[50];
+    memset(roomFileStr, '\0', 50*sizeof(char));
 
-    char startRoomPath[50];
-    memset(startRoomPath, '\0', 50*sizeof(char));
+    struct room *curRoom; 
 
-    char endRoomPath[50];
-    memset(endRoomPath, '\0', 50*sizeof(char));
+    rewinddir(roomDirectory);
+    roomCount = 0;
 
-    roomDirectory = opendir(roomDir);
+    int conRoomCount = 0;
 
     //Increment through files in room directory
     while (entry = readdir(roomDirectory)){
@@ -63,53 +100,101 @@ int main() {
         if (strstr(entry->d_name, "_room") != NULL){
 
             //Concat the proper file path and open it
-            sprintf(roomFile, "%s/%s", roomDir, entry->d_name);
-            room = fopen(roomFile, "r");
+            sprintf(roomFileStr, "%s/%s", roomDir, entry->d_name);
+            roomFile = fopen(roomFileStr, "r");
 
-            //Check if the room is the start
-            fseek(room, -11, SEEK_END);
+            fgets(lineStr, 50, roomFile);
+           
+            //Gets rid of new line and gets the room struct
+            lineStr[strlen(lineStr) - 1] = '\0';
+            curRoom = getRoomByName(roomList, 7, lineStr + 11);
 
-	    if (strstr(fgets(lineStr, 50, room), "START") != NULL) {
-                sprintf(startRoomPath, "%s", roomFile); 
-	    }
- 
-            //Check if the room is the end
-            fseek(room, -9, SEEK_END);
+            //Store all of the room connections
+            conRoomCount = 0;
+            curRoom->numConRooms = 0;
+           
+            fgets(lineStr, 50, roomFile);
 
-	    if (strstr(fgets(lineStr, 50, room), "END") != NULL) {
-                sprintf(endRoomPath, "%s", roomFile);
-	    }           
+            do {  
+                 lineStr[strlen(lineStr) - 1] = '\0';
+                 curRoom->conRooms[conRoomCount] = getRoomByName(roomList, 7, lineStr + 14);
+                 curRoom->numConRooms++;
 
-            fclose(room);
+                 conRoomCount++;
+
+                 fgets(lineStr, 50, roomFile);
+
+            } while (strstr(lineStr, "CONNECTION") != NULL); 
+
+            //Store the end type
+            if (strstr(lineStr, "START") != NULL) {
+                strcpy(curRoom->type, "STR");
+            } else if (strstr(lineStr, "END") != NULL) {
+                strcpy(curRoom->type, "END");
+            } else {
+                strcpy(curRoom->type, "MID");
+            }
+
+            fclose(roomFile);
         }
     }
     
     closedir(roomDirectory);
 
+
+    //TEST prints the struct contents
+//    int i;
+//    int j;
+//    for (i = 0; i < 7; i++){
+//        printf("Name: %s\n", roomList[i].name);
+//        for (j = 0; j < roomList[i].numConRooms; j++){
+//            printf("Connection: %s\n", roomList[i].conRooms[j]->name);
+//        }
+//        printf("Connection Number: %d\n", roomList[i].numConRooms);
+//        printf("Type: %s\n", roomList[i].type);
+//    }
+
+    //Get the starting room
+    struct room *startRoom;    
+
+    roomCount = 0;
+    while (strcmp(roomList[roomCount].type, "STR") != 0){
+        roomCount++;
+    }
+    startRoom = &roomList[roomCount];
+    
     //Run game loop
-    FILE *startRoom, *endRoom;
-
-    startRoom = fopen(startRoomPath, "r");
-    endRoom = fopen(endRoomPath, "r");
-
-    AdventureLoop(startRoom, endRoom);
-
-    fclose(startRoom); 
-    fclose(endRoom);
+    adventureLoop(startRoom);
 
     return 0;
 }
 
-void AdventureLoop (FILE *startRoom, FILE *endRoom){
 
-    FILE *currentRoom;
+struct room * getRoomByName (struct room *roomList, int roomNum, char name[]){
+    struct room *correctRoom = NULL;
+    int roomCount = 0;
 
-    currentRoom = startRoom;    
+    while (correctRoom == NULL && roomCount < roomNum){
+
+        if (strcmp((roomList + roomCount)->name, name) == 0){
+            correctRoom = roomList + roomCount;
+        }
+
+        roomCount++;
+    }
+
+    return correctRoom;
+}
+
+
+void adventureLoop (struct room *startRoom){
+
+    struct room *currentRoom = startRoom;
 
     //game loop
     
     //Display contents of Room
-    DisplayRoom(currentRoom);
+    displayRoom(currentRoom);
 
     //Get valid input from user
 
@@ -121,33 +206,24 @@ void AdventureLoop (FILE *startRoom, FILE *endRoom){
 }
 
 
-void DisplayRoom (FILE *room){
-    char lineStr[50];
-    memset(lineStr, '\0', 50*sizeof(char));
-
-    //Print the current location
-    fgets(lineStr, 50, room);
-            
+void displayRoom (struct room *curRoom){
     //Increment the string to reach room name
-    printf("CURRENT LOCATION: %s", lineStr + 11);
+    printf("CURRENT LOCATION: %s\n", curRoom->name);
             
     //Add the connections
     printf("POSSIBLE CONNECTIONS: ");            
-           
-    fgets(lineStr, 50, room);
             
-    while (strstr(lineStr, "CONNECTION") != NULL){
-                
-        //Gets rid of new line
-        lineStr[strlen(lineStr) - 1] = '\0';
+    int i;
+    for (i = 0; i < curRoom->numConRooms; i++) {
 
-        printf("%s" , lineStr + 14);
+        printf("%s", curRoom->conRooms[i]->name);
 
-        if (strstr(fgets(lineStr, 50, room), "CONNECTION") != NULL){
+        if (i < curRoom->numConRooms - 1) {
             printf(", ");
+        } else {
+            printf(".\n");
         }
     }
 
-    printf(".\n");
     printf("WHERE TO? >");
 }
