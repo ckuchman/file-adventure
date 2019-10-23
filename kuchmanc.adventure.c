@@ -123,7 +123,6 @@ int main() {
                  conRoomCount++;
 
                  fgets(lineStr, 50, roomFile);
-
             } while (strstr(lineStr, "CONNECTION") != NULL); 
 
             //Store the end type
@@ -140,19 +139,6 @@ int main() {
     }
     
     closedir(roomDirectory);
-
-
-    //TEST prints the struct contents
-//    int i;
-//    int j;
-//    for (i = 0; i < 7; i++){
-//        printf("Name: %s\n", roomList[i].name);
-//        for (j = 0; j < roomList[i].numConRooms; j++){
-//            printf("Connection: %s\n", roomList[i].conRooms[j]->name);
-//        }
-//        printf("Connection Number: %d\n", roomList[i].numConRooms);
-//        printf("Type: %s\n", roomList[i].type);
-//    }
 
     //Get the starting room
     struct room *startRoom;    
@@ -190,19 +176,61 @@ struct room * getRoomByName (struct room *roomList, int roomNum, char name[]){
 void adventureLoop (struct room *startRoom){
 
     struct room *currentRoom = startRoom;
+    struct room *nextRoom;
+
+    struct room *roomPath[100];
+
+    char nextRoomStr[10];
+    memset(nextRoomStr, '\0', 10*sizeof(char));
+
+    int validRoom;
+    int i;
+    int steps = 0;
 
     //game loop
-    
-    //Display contents of Room
-    displayRoom(currentRoom);
+    while (strcmp(currentRoom->type, "END") != 0) {    
 
-    //Get valid input from user
+        //Get valid input from user
+        do {
 
-    //increment step count and add new room to list, set current room to new room
+            //Display contents of Room
+            displayRoom(currentRoom);
 
-    //Check if the end room has been reached, if not then start loop again
+            //TODO Clear Buffer for double
+            scanf("%s", nextRoomStr);
+
+            validRoom = 0;
+
+            for (i = 0; i < currentRoom->numConRooms; i++) {
+
+                if (strcmp(nextRoomStr, currentRoom->conRooms[i]->name) == 0) {
+                    validRoom = 1;
+                    nextRoom = currentRoom->conRooms[i];
+                }
+            }
+
+            printf("\n");
+
+            if (validRoom == 0) {
+                printf("HUH? I DON'T UNDERSTAND THAT ROOM. TRY AGAIN.\n\n");
+            }
+        } while(validRoom == 0);
+
+        currentRoom = nextRoom;
+
+        //increment step count and add new room to list, set current room to new room
+        roomPath[steps] = currentRoom;
+        steps++;
+    }
 
     //Print end message
+    printf("YOU HAVE FOUND THE END ROOM. CONGRATULATIONS!\n");
+    printf("YOU TOOK %d STEPS. YOUR PATH TO VICTORY WAS:\n", steps);
+
+    for (i = 0; i < steps; i++) {
+
+        printf("%s\n", roomPath[i]->name);
+    }
 }
 
 
