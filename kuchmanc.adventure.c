@@ -5,10 +5,6 @@
 #include <dirent.h>
 #include <time.h>
 
-struct room * getRoomByName (struct room *roomList, int roomNum, char name[]);
-void adventureLoop (struct room *startRoom);
-void displayRoom (struct room *curRoom);
-
 struct room
 {
     char name[9];
@@ -17,12 +13,39 @@ struct room
     char type[4];
 };
 
+void getRecentFolder (char roomDir[]);
+void storeRoomArray (struct room roomList[], char roomDir[]);
+struct room *getStartRoom (struct room roomList[]);
+struct room *getRoomByName (struct room *roomList, int roomNum, char name[]);
+void adventureLoop (struct room *startRoom);
+void displayRoom (struct room *curRoom);
+
 int main() {
 
     //Find the most recent rooms folder
     char roomDir[50];
     memset(roomDir, '\0', 50*sizeof(char));
 
+    getRecentFolder(roomDir);
+
+    //Store information of rooms
+    struct room roomList[7];
+
+    storeRoomArray(roomList, roomDir);
+
+    //Get the starting room
+    struct room *startRoom;
+
+    startRoom = getStartRoom(roomList);
+    
+    //Run game loop
+    adventureLoop(startRoom);
+
+    return 0;
+}
+
+
+void getRecentFolder (char roomDir[]){
     //Open current directory
     //Code source taken from https://c-for-dummies.com/blog/?p=3246
     DIR *directory;
@@ -46,11 +69,13 @@ int main() {
 
     //Close current directory
     closedir(directory);
+}
 
 
+void storeRoomArray (struct room roomList[], char roomDir[]){
     //Store information of rooms
     DIR *roomDirectory;
-    struct room roomList[7];
+    struct dirent *entry;
 
     char fileStr[50];
     memset(fileStr, '\0', 50*sizeof(char));
@@ -139,24 +164,24 @@ int main() {
     }
     
     closedir(roomDirectory);
+}
 
+
+struct room *getStartRoom (struct room roomList[]){
     //Get the starting room
     struct room *startRoom;    
 
-    roomCount = 0;
+    int roomCount = 0;
     while (strcmp(roomList[roomCount].type, "STR") != 0){
         roomCount++;
     }
     startRoom = &roomList[roomCount];
-    
-    //Run game loop
-    adventureLoop(startRoom);
 
-    return 0;
+    return startRoom; 
 }
 
 
-struct room * getRoomByName (struct room *roomList, int roomNum, char name[]){
+struct room *getRoomByName (struct room *roomList, int roomNum, char name[]){
     struct room *correctRoom = NULL;
     int roomCount = 0;
 
