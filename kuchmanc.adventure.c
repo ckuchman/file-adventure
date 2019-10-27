@@ -4,6 +4,8 @@
 #include <string.h>
 #include <dirent.h>
 #include <time.h>
+#include <pthread.h>
+#include <assert.h>
 
 struct room
 {
@@ -13,15 +15,15 @@ struct room
     char type[4];
 };
 
-void getRecentFolder (char roomDir[]);
-void storeRoomArray (struct room roomList[], char roomDir[]);
-struct room *getStartRoom (struct room roomList[]);
-struct room *getRoomByName (struct room *roomList, int roomNum, char name[]);
-void adventureLoop (struct room *startRoom);
-void displayRoom (struct room *curRoom);
+void getRecentFolder(char roomDir[]);
+void storeRoomArray(struct room roomList[], char roomDir[]);
+struct room *getStartRoom(struct room roomList[]);
+struct room *getRoomByName(struct room *roomList, int roomNum, char name[]);
+void *adventureLoop(void *arg);
+void displayRoom(struct room *curRoom);
+void *displayTime(void *arg);
 
 int main() {
-
     //Find the most recent rooms folder
     char roomDir[50];
     memset(roomDir, '\0', 50*sizeof(char));
@@ -37,15 +39,22 @@ int main() {
     struct room *startRoom;
 
     startRoom = getStartRoom(roomList);
-    
+   
     //Run game loop
-    adventureLoop(startRoom);
+    pthread_t adventureThread;
+    int adventureThreadCode;
+
+    adventureThreadCode = pthread_create(&adventureThread, NULL, adventureLoop, (void *) &startRoom);
+    assert(0 == adventureThreadCode);
+
+    adventureThreadCode = pthread_join(adventureThread, NULL);
+    assert(0 == adventureThreadCode);
 
     return 0;
 }
 
 
-void getRecentFolder (char roomDir[]){
+void getRecentFolder(char roomDir[]){
     //Open current directory
     //Code source taken from https://c-for-dummies.com/blog/?p=3246
     DIR *directory;
@@ -72,7 +81,7 @@ void getRecentFolder (char roomDir[]){
 }
 
 
-void storeRoomArray (struct room roomList[], char roomDir[]){
+void storeRoomArray(struct room roomList[], char roomDir[]){
     //Store information of rooms
     DIR *roomDirectory;
     struct dirent *entry;
@@ -167,7 +176,7 @@ void storeRoomArray (struct room roomList[], char roomDir[]){
 }
 
 
-struct room *getStartRoom (struct room roomList[]){
+struct room *getStartRoom(struct room roomList[]){
     //Get the starting room
     struct room *startRoom;    
 
@@ -181,7 +190,7 @@ struct room *getStartRoom (struct room roomList[]){
 }
 
 
-struct room *getRoomByName (struct room *roomList, int roomNum, char name[]){
+struct room *getRoomByName(struct room *roomList, int roomNum, char name[]){
     struct room *correctRoom = NULL;
     int roomCount = 0;
 
@@ -198,7 +207,9 @@ struct room *getRoomByName (struct room *roomList, int roomNum, char name[]){
 }
 
 
-void adventureLoop (struct room *startRoom){
+void *adventureLoop(void *arg){
+
+    struct room *startRoom = *((struct room **) arg); 
 
     struct room *currentRoom = startRoom;
     struct room *nextRoom;
@@ -211,6 +222,17 @@ void adventureLoop (struct room *startRoom){
     int validRoom;
     int i;
     int steps = 0;
+
+    //Create mutex and lock the adventure process
+    pthread_mutex_t advMutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_lock(&advMutex);
+
+    //Start time thread
+    pthread_t timeThread;
+    int timeThreadCode;
+
+    timeThreadCode = pthread_create(&timeThread, NULL, displayTime, (void *) &advMutex);
+    assert(0 == timeThreadCode);
 
     //game loop
     while (strcmp(currentRoom->type, "END") != 0) {    
@@ -226,19 +248,35 @@ void adventureLoop (struct room *startRoom){
 
             validRoom = 0;
 
-            for (i = 0; i < currentRoom->numConRooms; i++) {
+            if (strstr(nextRoomStr, "time") != 0) {
 
-                if (strcmp(nextRoomStr, currentRoom->conRooms[i]->name) == 0) {
-                    validRoom = 1;
-                    nextRoom = currentRoom->conRooms[i];
+                pthread_mutex_unlock(&advMutex);
+
+                timeThreadCode = pthread_join(timeThread, NULL);
+                assert(0 == timeThreadCode);
+
+                timeThreadCode = pthread_create(&timeThread, NULL, displayTime, (void *) &advMutex);
+                assert(0 == timeThreadCode);
+
+                pthread_mutex_lock(&advMutex);
+            } else {
+
+                for (i = 0; i < currentRoom->numConRooms; i++) {
+
+                    if (strcmp(nextRoomStr, currentRoom->conRooms[i]->name) == 0) {
+                        validRoom = 1;
+                        nextRoom = currentRoom->conRooms[i];
+                    }
+                }
+
+                printf("\n");
+
+                if (validRoom == 0) {
+                    printf("HUH? I DON'T UNDERSTAND THAT ROOM. TRY AGAIN.\n");
                 }
             }
 
             printf("\n");
-
-            if (validRoom == 0) {
-                printf("HUH? I DON'T UNDERSTAND THAT ROOM. TRY AGAIN.\n\n");
-            }
         } while(validRoom == 0);
 
         currentRoom = nextRoom;
@@ -259,7 +297,7 @@ void adventureLoop (struct room *startRoom){
 }
 
 
-void displayRoom (struct room *curRoom){
+void displayRoom(struct room *curRoom){
     //Increment the string to reach room name
     printf("CURRENT LOCATION: %s\n", curRoom->name);
             
@@ -280,3 +318,41 @@ void displayRoom (struct room *curRoom){
 
     printf("WHERE TO? >");
 }
+
+void *displayTime(void *arg){
+    pthread_mutex_t *mutex = (pthread_mutex_t *) arg; 
+    int mutexCode;
+
+    time_t curTime;
+    struct tm *timeInfo;
+    char timeBuffer[80];
+
+    mutexCode = pthread_mutex_lock(mutex);
+
+    time(&curTime);
+
+    timeInfo = localtime(&curTime);
+   
+    //TODO Make am/pm lower case
+    strftime(timeBuffer, 80, "%I:%M%p, %A, %B %d, %Y", timeInfo);
+
+    if (timeBuffer[0] == '0') {
+        printf("%s\n", timeBuffer + 1);
+    } else {
+        printf("%s\n", timeBuffer);
+    }
+
+    //TODO Write to file
+
+
+    pthread_mutex_unlock(mutex);
+}
+
+
+
+
+
+
+
+
+
