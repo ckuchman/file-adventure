@@ -323,27 +323,38 @@ void *displayTime(void *arg){
     pthread_mutex_t *mutex = (pthread_mutex_t *) arg; 
     int mutexCode;
 
+    FILE *timeFile;
+
     time_t curTime;
     struct tm *timeInfo;
     char timeBuffer[80];
+    char readBuffer[80];
 
     mutexCode = pthread_mutex_lock(mutex);
+
+    timeFile = fopen("currentTime.txt", "w");
 
     time(&curTime);
 
     timeInfo = localtime(&curTime);
    
-    //TODO Make am/pm lower case
-    strftime(timeBuffer, 80, "%I:%M%p, %A, %B %d, %Y", timeInfo);
+    strftime(timeBuffer, 80, "%I:%M%P, %A, %B %d, %Y", timeInfo);
 
     if (timeBuffer[0] == '0') {
-        printf("%s\n", timeBuffer + 1);
+        fprintf(timeFile, "%s\n", timeBuffer + 1);
     } else {
-        printf("%s\n", timeBuffer);
+        fprintf(timeFile, "%s\n", timeBuffer);
     }
 
-    //TODO Write to file
+    fclose(timeFile);
 
+    
+    timeFile = fopen("currentTime.txt", "r");
+
+    fgets(readBuffer, 80, timeFile);
+    printf("%s", readBuffer);
+
+    fclose(timeFile);
 
     pthread_mutex_unlock(mutex);
 }
