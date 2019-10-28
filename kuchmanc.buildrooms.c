@@ -1,4 +1,3 @@
-// TODO
 #include<stdio.h>
 #include<string.h>
 #include<time.h>
@@ -146,10 +145,10 @@ int main(void)
 int ValidNumConnections(int *conCount, int numRooms) {
 
     int validNum = 1;
-
     int i;
+
     for (i = 0; i < numRooms; i++) {
-//        printf("Number of room connections for room %d: %d\n", i, conCount[i]);
+
         if (conCount[i] < 3) {
             validNum = 0;
         }
